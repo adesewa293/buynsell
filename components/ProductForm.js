@@ -18,7 +18,7 @@ export default function ProductForm({
 
   async function saveProduct(event) {
     event.preventDefault();
-    const data = { title, description, price };
+    const data = { title, description, price, images};
     if (_id) {
       //update
       await axios.put("/api/products", { ...data, _id });
@@ -40,7 +40,7 @@ export default function ProductForm({
       for (const file of files) {
         data.append("file", file);
       }
-      const res = await axios.post('/api/upload', data);
+      const res = await axios.post("/api/upload", data);
       setImages((oldImages) => {
         return [...oldImages, ...res.data.links];
       });

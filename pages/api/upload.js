@@ -1,7 +1,7 @@
 import multiparty from "multiparty";
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
-import fs from 'fs';
-import mime from 'mime-types';
+import fs from "fs";
+import mime from "mime-types";
 const bucketName = "buynsell-ecommerce";
 
 export default async function handle(req, res) {
@@ -21,22 +21,26 @@ export default async function handle(req, res) {
   });
   const links = [];
   for (const file of files.file) {
-    const ext = file.originalFilename.split('.').pop();
-    const newFilename = Date.now() + '.' + ext;
-    await client.send(
-      new PutObjectCommand({
-        Bucket: bucketName,
-        Key: newFilename,
-        Body: fs.readFileSync(file.path),
-        ACL:'public-read',
-        ContentType: mime.lookup(file.path)
-      })
-    );
-    const link = `https://${bucketName}.s3.amazonaws.com/${newFilename}`;
-    links.push(link);
+    const ext = file.originalFilename.split(".").pop();
+    const newFilename = Date.now() + "." + ext;
+    try {
+      await client.send(
+        new PutObjectCommand({
+          Bucket: bucketName,
+          Key: newFilename,
+          Body: fs.readFileSync(file.path),
+          ACL: "public-read",
+          ContentType: mime.lookup(file.path),
+        })
+      );
+      const link = `https://${bucketName}.s3.amazonaws.com/${newFilename}`;
+      links.push(link);
+    } catch (error) {
+      console.error(error);
+    }
   }
 
-  return res.json({links});
+  return res.json({ links });
 }
 
 export const config = {
