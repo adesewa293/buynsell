@@ -1,11 +1,14 @@
 import Layout from "@/components/Layout";
 import axios from "axios";
 import { useEffect, useState } from "react";
+import {withSwal} from 'react-sweetalert2';
 
-export default function categories() {
+function Categories({swal}) {
+  const [editedCategory, setEditedCategory] = useState(null);
   const [name, setName] = useState("");
   const [parentCategory, setParentCategory] = useState("");
   const [categories, setCategories] = useState([]);
+  const [properties, setProperties] = useState([]);
   useEffect(() => {
     fetchCategories();
   }, []);
@@ -16,15 +19,55 @@ export default function categories() {
   }
   async function saveCategory(event) {
     event.preventDefault();
-    await axios.post("/api/categories", { name, parentCategory });
+    const data = {name, parentCategory}
+    if (editedCategory) {
+      data._id = editedCategory._id
+    await axios.put('/api/categories', data)
+    setEditedCategory(null);
+    } else {
+      await axios.post("/api/categories", data);
+
+    }
     setName("");
     fetchCategories();
+  }
+  function editCategory(category) {
+    setEditedCategory(category);
+    setName(category.name);
+    setParentCategory(category.parent?._id);
+  }
+  function deleteCategory(category) {
+    swal.fire({
+      title: 'Are you sure?',
+      text: `Do you want to delete ${category.name}?`,
+      showCancelButton: true,
+      cancelButtonText: 'Cancel',
+      confirmButtonText: 'Yes, Delete!',
+      confirmButtonColor: '#d55',
+      reverseButtons: true,
+  }).then(async result => {
+if (result.isConfirmed) {
+  const {_id} = category;
+  await axios.delete('/api/categories?_id='+_id)
+  fetchCategories();
+}
+  })
+  }
+  function addProperty(){
+    setProperties(prev => {
+      return[...prev, {name:'', values:''}]
+    })
   }
   return (
     <Layout>
       <h1>Categories</h1>
-      <label>New Category Name</label>
+      <label>
+        {editedCategory
+          ? `Edit Category ${editedCategory.name}`
+          : "Create new Category"}
+      </label>
       <form onSubmit={saveCategory} className="flex gap-1">
+        <div className="flex gap-1">
         <input
           className="mb-0"
           type="text"
@@ -37,12 +80,23 @@ export default function categories() {
           value={parentCategory}
           onChange={(event) => setParentCategory(event.target.value)}
         >
-          <option value="0">No parent category</option>
+          <option value=''>No parent category</option>
           {categories.length > 0 &&
             categories.map((category) => (
               <option value={category._id}>{category.name}</option>
             ))}
         </select>
+        </div>
+        <div className="mb-2">
+          <label className="block">Properties</label>
+          <button onClick={addProperty} type="button" className="btn-default text-sm">Add new Property</button>
+          {properties.length > 0 && properties.map(property => (
+            <div className="flex gap-1">
+              <input type="text" placeholder="property name(example: color)" />
+              <input type="text" placeholder="values, comma separated" />
+            </div>
+          ))}
+        </div>
         <button type="submit" className="btn-primary py-1">
           Save
         </button>
@@ -62,8 +116,13 @@ export default function categories() {
                 <td>{category.name}</td>
                 <td>{category?.parent?.name}</td>
                 <td>
-                  <button className="btn-primary mr-1">Edit</button>
-                  <button className="btn-primary">Delete</button>
+                  <button
+                    onClick={() => editCategory(category)}
+                    className="btn-primary mr-1"
+                  >
+                    Edit
+                  </button>
+                  <button onClick={() => deleteCategory(category)} className="btn-primary">Delete</button>
                 </td>
               </tr>
             ))}
@@ -72,3 +131,6 @@ export default function categories() {
     </Layout>
   );
 }
+export default withSwal(({swal}, ref) => (
+  <Categories swal={swal}/>
+) );
