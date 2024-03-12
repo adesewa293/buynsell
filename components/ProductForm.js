@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useRouter } from "next/router";
 import axios from "axios";
+import Spinner from "./Spinner";
+import { ReactSortable } from "react-sortablejs";
 
 export default function ProductForm({
   _id,
@@ -14,6 +16,7 @@ export default function ProductForm({
   const [price, setPrice] = useState(existingPrice || "");
   const [goToProducts, setGoToProducts] = useState(false);
   const [images, setImages] = useState(existingImages || []);
+  const [isUploading, setIsUploading] = useState(false)
   const router = useRouter();
 
   async function saveProduct(event) {
@@ -36,6 +39,7 @@ export default function ProductForm({
   async function uploadImages(event) {
     const files = event?.target.files;
     if (files?.length > 0) {
+      setIsUploading(true);
       const data = new FormData();
       for (const file of files) {
         data.append("file", file);
@@ -44,9 +48,12 @@ export default function ProductForm({
       setImages((oldImages) => {
         return [...oldImages, ...res.data.links];
       });
+      setIsUploading(false);
     }
   }
-
+function updateImagesOrder (images) {
+setImages(images);
+}
   return (
     <form onSubmit={saveProduct}>
       <label>Product name</label>
@@ -57,13 +64,23 @@ export default function ProductForm({
         onChange={(event) => setTitle(event.target.value)}
       />
       <label>Photos</label>
-      <div className="mb-2 flex flex-wrap gap-2">
+      <div className="mb-2 flex flex-wrap gap-1">
+        <ReactSortable 
+        list={images} 
+        className="flex flex-wrap gap-1"
+        setList={updateImagesOrder}>
         {!!images?.length &&
           images.map((link) => (
             <div className="h-24" key={link}>
               <img src={link} alt="" className="rounded-lg" />
             </div>
           ))}
+          </ReactSortable>
+          {isUploading && (
+            <div className="h-24 flex items-center">
+              <Spinner />
+            </div>
+          )}
         <label className="w-24 h-24 text-center cursor-pointer flex items-center justify-center flex-col text-sm gap-1 text-gray-500 rounded-lg bg-gray-200">
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -82,7 +99,6 @@ export default function ProductForm({
           <div>Upload</div>
           <input type="file" onChange={uploadImages} className="hidden" />
         </label>
-        {!images?.length && <div>No photos in this product</div>}
       </div>
       <label>Description</label>
       <textarea
