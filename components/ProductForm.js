@@ -11,25 +11,27 @@ export default function ProductForm({
   price: existingPrice,
   images: existingImages,
   category: assignedCategory,
+  properties: assignedProperties,
 }) {
   const [title, setTitle] = useState(existingTitle || "");
   const [description, setDescription] = useState(existingDescription || "");
-  const [category, setCategory] = useState(assignedCategory || '');
+  const [category, setCategory] = useState(assignedCategory || "");
+  const [productProperties, setProductProperties] = useState(assignedProperties || {});
   const [price, setPrice] = useState(existingPrice || "");
   const [goToProducts, setGoToProducts] = useState(false);
   const [images, setImages] = useState(existingImages || []);
   const [isUploading, setIsUploading] = useState(false);
-  const [categories, setCategories] = useState([])
+  const [categories, setCategories] = useState([]);
   const router = useRouter();
   useEffect(() => {
-    axios.get('/api/categories').then(result => {
+    axios.get("/api/categories").then((result) => {
       setCategories(result.data);
-    })
-  }, [] );
+    });
+  }, []);
 
   async function saveProduct(event) {
     event.preventDefault();
-    const data = { title, description, price, images, category};
+    const data = { title, description, price, images, category, properties:productProperties };
     if (_id) {
       //update
       await axios.put("/api/products", { ...data, _id });
@@ -59,19 +61,29 @@ export default function ProductForm({
       setIsUploading(false);
     }
   }
-function updateImagesOrder (images) {
-setImages(images);
-}
-const propertiesToFill = [];
-if (categories.length > 0 && category){
-  let catInfo = categories.find(({_id}) => _id === category);
-  propertiesToFill.push(...catInfo.properties);
-  while(catInfo?.parent?._id) {
-    const parentCat = categories.find(({_id}) => _id === catInfo?.parent?._id)
-    propertiesToFill.push(...parentCat.properties);
-    catInfo = parentCat;
+  function updateImagesOrder(images) {
+    setImages(images);
   }
-}
+  function setProductProp(propName,value){
+    setProductProperties(prev => {
+      const newProductProps = {...prev};
+      newProductProps[propName] = value;
+      return newProductProps;
+    });
+  }
+
+  const propertiesToFill = [];
+  if (categories.length > 0 && category) {
+    let catInfo = categories.find(({ _id }) => _id === category);
+    propertiesToFill.push(...catInfo.properties);
+    while (catInfo?.parent?._id) {
+      const parentCat = categories.find(
+        ({ _id }) => _id === catInfo?.parent?._id
+      );
+      propertiesToFill.push(...parentCat.properties);
+      catInfo = parentCat;
+    }
+  }
 
   return (
     <form onSubmit={saveProduct}>
@@ -83,33 +95,44 @@ if (categories.length > 0 && category){
         onChange={(event) => setTitle(event.target.value)}
       />
       <label>Category</label>
-      <select value={category} onChange={event => setCategory(event.target.value)}>
+      <select
+        value={category}
+        onChange={(event) => setCategory(event.target.value)}
+      >
         <option value="">Uncategorized</option>
-        {categories.length > 0 && categories.map(c =>(<option value={c._id}>{c.name}</option>))}
+        {categories.length > 0 &&
+          categories.map((c) => <option value={c._id}>{c.name}</option>)}
       </select>
-      {propertiesToFill.length > 0 && propertiesToFill.map(p => (
-        <div>
-          {p.name}
-        </div>
-      ))}
+      {propertiesToFill.length > 0 &&
+        propertiesToFill.map((p) => (
+          <div>
+            <div>{p.name}</div>
+            <select value={productProperties[p.name]} onChange={(event) => setProductProp(p.name, event.target.value)}>
+              {p.values.map((v) => (
+                <option value={v}>{v}</option>
+              ))}
+            </select>
+          </div>
+        ))}
       <label>Photos</label>
       <div className="mb-2 flex flex-wrap gap-1">
-        <ReactSortable 
-        list={images} 
-        className="flex flex-wrap gap-1"
-        setList={updateImagesOrder}>
-        {!!images?.length &&
-          images.map((link) => (
-            <div className="h-24" key={link}>
-              <img src={link} alt="" className="rounded-lg" />
-            </div>
-          ))}
-          </ReactSortable>
-          {isUploading && (
-            <div className="h-24 flex items-center">
-              <Spinner />
-            </div>
-          )}
+        <ReactSortable
+          list={images}
+          className="flex flex-wrap gap-1"
+          setList={updateImagesOrder}
+        >
+          {!!images?.length &&
+            images.map((link) => (
+              <div className="h-24" key={link}>
+                <img src={link} alt="" className="rounded-lg" />
+              </div>
+            ))}
+        </ReactSortable>
+        {isUploading && (
+          <div className="h-24 flex items-center">
+            <Spinner />
+          </div>
+        )}
         <label className="w-24 h-24 text-center cursor-pointer flex items-center justify-center flex-col text-sm gap-1 text-gray-500 rounded-lg bg-gray-200">
           <svg
             xmlns="http://www.w3.org/2000/svg"
