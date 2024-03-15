@@ -16,7 +16,9 @@ export default function ProductForm({
   const [title, setTitle] = useState(existingTitle || "");
   const [description, setDescription] = useState(existingDescription || "");
   const [category, setCategory] = useState(assignedCategory || "");
-  const [productProperties, setProductProperties] = useState(assignedProperties || {});
+  const [productProperties, setProductProperties] = useState(
+    assignedProperties || {}
+  );
   const [price, setPrice] = useState(existingPrice || "");
   const [goToProducts, setGoToProducts] = useState(false);
   const [images, setImages] = useState(existingImages || []);
@@ -31,7 +33,14 @@ export default function ProductForm({
 
   async function saveProduct(event) {
     event.preventDefault();
-    const data = { title, description, price, images, category, properties:productProperties };
+    const data = {
+      title,
+      description,
+      price,
+      images,
+      category,
+      properties: productProperties,
+    };
     if (_id) {
       //update
       await axios.put("/api/products", { ...data, _id });
@@ -64,9 +73,9 @@ export default function ProductForm({
   function updateImagesOrder(images) {
     setImages(images);
   }
-  function setProductProp(propName,value){
-    setProductProperties(prev => {
-      const newProductProps = {...prev};
+  function setProductProp(propName, value) {
+    setProductProperties((prev) => {
+      const newProductProps = { ...prev };
       newProductProps[propName] = value;
       return newProductProps;
     });
@@ -105,13 +114,18 @@ export default function ProductForm({
       </select>
       {propertiesToFill.length > 0 &&
         propertiesToFill.map((p) => (
-          <div>
-            <div>{p.name}</div>
-            <select value={productProperties[p.name]} onChange={(event) => setProductProp(p.name, event.target.value)}>
-              {p.values.map((v) => (
-                <option value={v}>{v}</option>
-              ))}
-            </select>
+          <div className="">
+            <label>{p.name}</label>
+            <div>
+              <select
+                value={productProperties[p.name]}
+                onChange={(event) => setProductProp(p.name, event.target.value)}
+              >
+                {p.values.map((v) => (
+                  <option value={v}>{v}</option>
+                ))}
+              </select>
+            </div>
           </div>
         ))}
       <label>Photos</label>
@@ -123,7 +137,7 @@ export default function ProductForm({
         >
           {!!images?.length &&
             images.map((link) => (
-              <div className="h-24" key={link}>
+              <div className="h-24 bg-white p-4 shadow-sm rounded-sm border border-gray-200" key={link}>
                 <img src={link} alt="" className="rounded-lg" />
               </div>
             ))}
@@ -133,7 +147,7 @@ export default function ProductForm({
             <Spinner />
           </div>
         )}
-        <label className="w-24 h-24 text-center cursor-pointer flex items-center justify-center flex-col text-sm gap-1 text-gray-500 rounded-lg bg-gray-200">
+        <label className="w-24 h-24 text-center cursor-pointer flex items-center justify-center flex-col text-sm gap-1 text-primary rounded-sm bg-white shadow-sm border-primary">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
@@ -148,7 +162,7 @@ export default function ProductForm({
               d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"
             />
           </svg>
-          <div>Upload</div>
+          <div>Add image</div>
           <input type="file" onChange={uploadImages} className="hidden" />
         </label>
       </div>
